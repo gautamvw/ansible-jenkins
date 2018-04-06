@@ -1,0 +1,31 @@
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  become: yes
+
+  vars:
+    launch_new: N
+    jenkins_home:
+    jenkins_user:
+    jenkins_port:
+    variable_host: test1
+    inventory_path: /etc/ansible/hosts
+
+  tasks:
+    - block:
+      - name: read the inventory file
+        shell: cat inventory_path
+        register: inventory
+      - name: if the host doesnt exist in inventory
+        debug: msg="host '{{variable_host}}' not found in inventory file - {{inventory_path}}"
+        when:
+          - inventory.stdout.find('{{variable_host}}') == -1
+      - include: jenkins_inv.yml
+        when:
+          - inventory.stdout.find('{{variable_host}}') != -1
+      when:
+        - launch_new == 'N'
+
+    - include: ec2.yml
+      when:
+        - launch_new == 'Y'
